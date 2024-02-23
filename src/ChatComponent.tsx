@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
+import { ChatMessage, sendRequest } from './apiUtils';
 
-interface MessageType {
-  role: 'user' | 'model';
-  parts: { text: string }[];
-}
+const ACCESS_TOKEN = "ya29.a0AfB_byD8eUiya7mgsBGIjEEn4lf65li7j7DT7hv6lEpPjtQjL_mNBEkrV5l_TsYnvkPD1ZXdI0E4pk176GVr2DQ9ckb_uQf9HmCm5dfqgvu_Q4coGSbtBA-1XxKapW1p04Ib-hOU2ZzvBukANXMTnBbXGj_08V9ruBHvk0D1WasaCgYKAdwSARASFQHGX2MiqPemv5zd7wj8yAdAtw23EQ0178";
 
-const initialChatData: MessageType[] = [
+const initialChatData: ChatMessage[] = [
   {
     role: 'user',
     parts: [{ text: 'Explain quantum computing in simple terms' }],
@@ -22,10 +20,13 @@ const initialChatData: MessageType[] = [
 ];
 
 const ChatComponent: React.FC = () => {
-  const [chatMessages, setChatMessages] = useState<MessageType[]>(initialChatData);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(initialChatData);
 
-  const handleNewMessage = (newMessage: MessageType) => {
-    setChatMessages([...chatMessages, newMessage]);
+  const handleNewMessage = (newMessage: ChatMessage) => {
+    setChatMessages(oldMessages => {
+      const updatedConvo = [...oldMessages, newMessage];
+      return updatedConvo;
+    });
   };
 
   return (
@@ -63,22 +64,22 @@ const ChatComponent: React.FC = () => {
         className="flex w-full items-center rounded-b-md border-t border-slate-300 bg-slate-200 p-2 dark:border-slate-700 dark:bg-slate-900"
         onSubmit={(e) => {
           e.preventDefault();
-          const inputText = document.getElementById('chat-input')!.value;
-          document.getElementById('chat-input')!.value = '';
-
-          const newMessage = { role: 'user', parts: [{ text: inputText }] };
-          handleNewMessage(newMessage);
+          const thetextarea = document.getElementById('chat-input');
+          if (thetextarea instanceof HTMLTextAreaElement) {
+            handleNewMessage({ role: 'user', parts: [{ text: thetextarea.value }] });
+            sendRequest(chatMessages, ACCESS_TOKEN).then(x => handleNewMessage(x.candidates[0].content));
+            thetextarea.value = '';
+          }
         }}
       >
-        <label htmlFor="chat" className="sr-only">Enter your prompt</label>
+        <label htmlFor="chat-input" className="sr-only">Enter your prompt</label>
         {/* ... Add your add button here */}
         <textarea
           id="chat-input"
-          rows="1"
           className="mx-2 flex min-h-full w-full rounded-md border border-slate-300 bg-slate-50 p-2 text-base text-slate-900 placeholder-slate-400 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-50 dark:placeholder-slate-400 dark:focus:border-blue-600 dark:focus:ring-blue-600"
           placeholder="Enter your prompt"
         ></textarea>
-        {/* ... Add your send button here */}
+        <input type="submit" value="Send" />
       </form>
     </div>
   );
